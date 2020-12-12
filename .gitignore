@@ -8,7 +8,7 @@ __pycache__/
 
 # Distribution / packaging
 .Python
-detectors/
+./perception/detectors/
 build/
 develop-eggs/
 dist/
