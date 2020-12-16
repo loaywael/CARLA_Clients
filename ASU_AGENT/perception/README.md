@@ -29,9 +29,9 @@
 
 <h1 align="center">2D Object Detection in CARLA</h1>
 
-<center>
-<img align="middle" src="./assets/doutput1.gif">
-</center>
+<p align="center">
+    <img src="./assets/doutput1.gif">
+</p>
 <table>
     <tr>
         <td><img src="./assets/det1.png"></td>
