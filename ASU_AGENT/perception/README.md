@@ -13,10 +13,6 @@
 │   │       └── object_detection
 │   └── __pycache__
 └── detectors
-    │
-    │
-    │
-    │
     └── ObjectDetection
         └── yolov3
             ├── data
