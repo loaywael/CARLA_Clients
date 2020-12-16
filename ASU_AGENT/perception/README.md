@@ -29,8 +29,9 @@
 
 <h1 align="center">2D Object Detection in CARLA</h1>
 
-
+<center>
 <img align="middle" src="./assets/doutput1.gif">
+</center>
 <table>
     <tr>
         <td><img src="./assets/det1.png"></td>
@@ -39,7 +40,7 @@
 </table>
 <br><br><br>
 
-## Usage
+## Usages
 --------
 <br>
 
