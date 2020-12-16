@@ -2,7 +2,8 @@
 directory tree:
 ---------------
 ```bash
-.
+./perception
+├── assets
 ├── clients
 │   ├── data
 │   │   └── mono_camera
@@ -25,3 +26,13 @@ directory tree:
             ├── weights
             └── yolov3_tf2
 ```
+
+## 2D Object Detection in CARLA
+<img src="./assets/doutput1.gif">
+<table>
+    <tr>
+        <td><img src="./assets/det1.png"></td>
+        <td><img src="./assets/det2.png"></td>
+    </tr>
+</table>
+
