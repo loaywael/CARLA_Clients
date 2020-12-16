@@ -29,7 +29,8 @@
 
 <h1 align="center">2D Object Detection in CARLA</h1>
 
-<img src="./assets/doutput1.gif">
+
+<img align="middle" src="./assets/doutput1.gif">
 <table>
     <tr>
         <td><img src="./assets/det1.png"></td>
@@ -71,7 +72,7 @@ $ git clone https://github.com/theAIGuysCode/Object-Detection-API
     this will save offline video of the captured frame in the path: 
     ```ASU_AGENT/perception/clients/data/mono_camera/rgb_video```
     <br>
-    
+
     then using yolov3 ```detect.py```
     ```bash
     python ASU_AGENT/perception/detectors/ObjectDetection/yolov3/detect.py \
