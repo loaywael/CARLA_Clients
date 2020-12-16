@@ -41,7 +41,7 @@
 <br>
 
 1. ### Create isolated virtualenv & install dependencies
-    make sure that your current dir in ```CARLA_Clients```
+    make sure that your current dir in ```CARLA_Clients/```
 
     ```bash
     $ virtualenv -p python3.7 venv
