@@ -131,4 +131,9 @@ dmypy.json
 
 *.mp4
 *clients/*.png
+*clients/*.jpg
+*clients/*.data
 *detectors/*.png
+*detection/*.png
+*detection/*.gif
+ASU_AGENT/perception/clients/data/mono_camera/
