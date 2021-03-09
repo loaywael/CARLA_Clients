@@ -50,9 +50,11 @@ try:
     rgbacam_bp.set_attribute("image_size_x", f"{IMG_WIDTH}")
     rgbacam_bp.set_attribute("image_size_y", f"{IMG_HEIGHT}")
     rgbacam_bp.set_attribute("fov", f"{CAM_FOV}")
-    cam_location = carla.Location(x=0.3, y=0.0, z=1.75)
+    leftcam_location = carla.Location(x=0.3, y=-0.15, z=1.75)
+    rightcam_location = carla.Location(x=0.3, y=0.15, z=1.75)
     cam_rotation = carla.Rotation(pitch=0.0, yaw=0.0, roll=0.0)
-    cam_spawn_pt = carla.Transform(cam_location, cam_rotation)
+    leftcam_spawn_pt = carla.Transform(leftcam_location, cam_rotation)
+    rightcam_spawn_pt = carla.Transform(rightcam_location, cam_rotation)
     
 except Exception as e:
     print("> ", e)
@@ -64,25 +66,31 @@ finally:
         print("spawned the car successfully!")
         actors_list.append(car)
         # -------------- spawn the sensors --------------
-        rgb_camera = world.spawn_actor(rgbacam_bp, cam_spawn_pt, attach_to=car)
+        left_camera = world.spawn_actor(rgbacam_bp, leftcam_spawn_pt, attach_to=car)
+        right_camera = world.spawn_actor(rgbacam_bp, rightcam_spawn_pt, attach_to=car)
         print("spawned rgba-camera successfully!")
-        actors_list.append(rgb_camera)
+        actors_list.append(left_camera)
+        actors_list.append(right_camera)
         # -------------- operate actors --------------
         car.set_autopilot(True)
-        frame_handler = FrameHandler()
-        rgb_camera.listen(frame_handler.preprocess)
-        while rgb_camera.is_alive:
-            if (frame_handler.img) is not None:
-                cv2.imshow("src", frame_handler.img)
+        leftframe_handler = FrameHandler()
+        rightframe_handler = FrameHandler()
+        left_camera.listen(leftframe_handler.preprocess)
+        right_camera.listen(rightframe_handler.preprocess)
+        while left_camera.is_alive and right_camera.is_alive:
+            if (leftframe_handler.img is not None) and (rightframe_handler.img is not None):
+                cv2.imshow("left", leftframe_handler.img)
+                cv2.imshow("right", rightframe_handler.img)
                 key = cv2.waitKey(10)
                 if key & 0xFF == ord('q'):
                     break
-        print(f"avg-fps: {frame_handler.avgfps}")
+        print('\n', "="*50)
+        print(f"left-camera avg-fps: {leftframe_handler.avgfps}")
+        print(f"right-camera avg-fps: {rightframe_handler.avgfps}")
 
 
     if __name__ == "__main__":
         stop_timer = th.Timer(RUNTIME, clean_world, args=[actors_list])
         stop_timer.start()
         main()
-        cv2.destroyAllWindows()
-       
+        cv2.destroyAllWindows()       
