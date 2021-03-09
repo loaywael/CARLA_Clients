@@ -1,35 +1,66 @@
+import threading as th
 import numpy as np
 import glob
 import cv2
+import sys
+import os
+CARLA_LIB_PATH = "/home/loaywael/Development/ROS/carla/CARLA_0-2.9.10/PythonAPI/carla/dist/"
 
+try:    # reqiored py3.7 
+    sys.path.append(glob.glob(CARLA_LIB_PATH + "carla-*%d.%d-%s.egg"%(
+        sys.version_info.major,
+        sys.version_info.minor,
+        "win-amd64" if os.name == "nt" else "linux-x86_64"
+    ))[0])
+
+except IndexError as e:
+    print("> ", e)
+
+import carla
 
 class FrameHandler(object):
     def __init__(self):
+        self.after_sec = th.Timer(1, self.__calc_fps)
         self.img = None
         self.id = 0
+        self.fps = 0
+        self.counter = 0
+        self.__avg_fps = []
 
-    def preprocess(self, frame, shape):
-        img = np.array(frame.raw_data)
-        img = img.reshape(shape)
-        self.img = img[:, :, :3]
-        print(f"frame-id: {self.id}\t frame-shape: {self.img.shape}\t")
-        self.id += 1
-        return self.img
-
-# class FPS(object):
-#     def __init__(self):
-#         self.fps = 0
-#         self.ready = False
+    def __calc_fps(self):
+        self.fps = self.counter
+        self.__avg_fps.append(self.fps)
+        self.counter = 0
     
-#     def tick(self):
-#         self.ready = True
+    @property
+    def avgfps(self):
+        return round(sum(self.__avg_fps)/len(self.__avg_fps))
+
+    def preprocess(self, frame):
+        if not self.after_sec.is_alive():
+            self.after_sec = th.Timer(1, self.__calc_fps)
+            self.after_sec.start()
+        img = np.array(frame.raw_data)
+        img = img.reshape(600, 800, 4)
+        self.img = img[:, :, :3]
+        print(f"\rframe-id: {self.id}\t shape: {self.img.shape}\tfps: {self.fps}", end='')
+        self.counter +=1
+        self.id += 1
 
 
 def clean_world(actors_list):
+    print('\n', '\n', '-'*75)
     print("Attempting to clean all actors...!")
-    for actor in actors_list[::-1]:
-        actor.destroy()
-    print("-"*11, "Cleaned All!", "-"*11)
+    no_of_actors = len(actors_list)
+    if no_of_actors > 0:
+        deleted = 0
+        for actor in actors_list:
+            if actor.is_alive:
+                if isinstance(actor, (carla.libcarla.Vehicle,)):
+                    actor.set_autopilot(False)
+                actor.destroy()
+                deleted += 1
+        print("-"*11, f"cleaned {deleted}/{no_of_actors} actors!", "-"*11)
    
 
 def preprocess_frame(frame, shape):
@@ -69,8 +100,8 @@ def unpack_video_frames(video_path, output_path):
         if not ret:
             break
         else:
-            # cv2.imwrite(output_path+"%06d.png"%i, frame)
-            print("-"*11, r"frame %06d"%i, "-"*11, end="")
+            cv2.imwrite(output_path+"%06d.png"%i, frame)
+            print("-"*11, "\rframe %06d"%i, "-"*11)
             i += 1
     cap.release()
 

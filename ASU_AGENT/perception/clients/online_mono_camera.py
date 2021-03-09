@@ -8,71 +8,82 @@ import threading as th
 from utils import clean_world
 from utils import FrameHandler
 
-CARLA_LIB_PATH = "../../../../carla/dist/"
+# CARLA_LIB_PATH = "../../../../carla/dist/"
+CARLA_LIB_PATH = "/home/loaywael/Development/ROS/carla/CARLA_0-2.9.10/PythonAPI/carla/dist/"
 IMG_WIDTH = 800
 IMG_HEIGHT = 600    
 CAM_FOV = 90            # camera field of view
-RUNTIME = 20            # seconds
+RUNTIME = 15            # seconds
+TIMEOUT = 10
 
-
-try:
+try:    # reqiored py3.7 
     sys.path.append(glob.glob(CARLA_LIB_PATH + "carla-*%d.%d-%s.egg"%(
         sys.version_info.major,
         sys.version_info.minor,
         "win-amd64" if os.name == "nt" else "linux-x86_64"
     ))[0])
 
-except IndexError:
-    pass
+except IndexError as e:
+    print("> ", e)
+
 import carla
 
 
-
 actors_list = []
+start_pt = carla.Transform(
+    carla.Location(x=-77.887169, y=99.725639, z=0.700000), 
+    carla.Rotation(pitch=0.0, yaw=-90.362541, roll=0.0)
+)
 try:
+    # -------------- init world --------------
+    print("initializing the world...!")
     client = carla.Client("localhost", 2000)
     world = client.get_world()
+    print("--- initialized world ---")
+    # -------------- configure the car --------------
     blueprint_lib = world.get_blueprint_library()
-    # -------------------------------------------
-    car1_bp = blueprint_lib.filter("model3")[0]
+    car_bp = blueprint_lib.filter("model3")[0]
     available_spawns = world.get_map().get_spawn_points()
-    spawn_pt = np.random.choice(available_spawns)
-    car1 = world.spawn_actor(car1_bp, spawn_pt)
-    print("spawned car1 successfully!")
-    car1.set_autopilot(True)
-    actors_list.append(car1)
-    # -------------------------------------------
+    car_spawn_pt = np.random.choice(available_spawns)
+    # -------------- configure the sensors --------------
     rgbacam_bp = blueprint_lib.find("sensor.camera.rgb")
     rgbacam_bp.set_attribute("image_size_x", f"{IMG_WIDTH}")
     rgbacam_bp.set_attribute("image_size_y", f"{IMG_HEIGHT}")
     rgbacam_bp.set_attribute("fov", f"{CAM_FOV}")
-    cam1_location = carla.Location(x=0.3, y=0.0, z=1.75)
-    cam1_rotation = carla.Rotation(pitch=0.0, yaw=0.0, roll=0.0)
-    spawn_pt = carla.Transform(cam1_location, cam1_rotation)
-    camera1 = world.spawn_actor(rgbacam_bp, spawn_pt, attach_to=car1)
-    print("spawned rgba-camera successfully!")
-    actors_list.append(camera1)
-    frame_handler = FrameHandler()
-    frame_shape = (IMG_HEIGHT, IMG_WIDTH, 4)
-    camera1.listen(lambda data: frame_handler.preprocess(data, frame_shape))
-    # -------------------------------------------
+    cam_location = carla.Location(x=0.3, y=0.0, z=1.75)
+    cam_rotation = carla.Rotation(pitch=0.0, yaw=0.0, roll=0.0)
+    cam_spawn_pt = carla.Transform(cam_location, cam_rotation)
+    
+except Exception as e:
+    print("> ", e)
 
 finally:
-    cleaner = th.Timer(RUNTIME, clean_world, args=[actors_list])
-    cleaner.start()
+    def main():
+        # -------------- spwan the car --------------
+        car = world.spawn_actor(car_bp, start_pt)
+        print("spawned the car successfully!")
+        actors_list.append(car)
+        # -------------- spawn the sensors --------------
+        rgb_camera = world.spawn_actor(rgbacam_bp, cam_spawn_pt, attach_to=car)
+        print("spawned rgba-camera successfully!")
+        actors_list.append(rgb_camera)
+        # -------------- operate actors --------------
+        car.set_autopilot(True)
+        frame_handler = FrameHandler()
+        rgb_camera.listen(frame_handler.preprocess)
+        while rgb_camera.is_alive:
+            if (frame_handler.img) is not None:
+                cv2.imshow("src", frame_handler.img )
+                key = cv2.waitKey(10)
+                if key & 0xFF == ord('q'):
+                    break
+        print(f"avg-fps: {frame_handler.avgfps}")
 
-time.sleep(1)
-def main():
-    print("here in main!")
-    while True:
-        frame = frame_handler.img 
-        cv2.imshow("src", frame)
-        key = cv2.waitKey(1)
-        if key & 0xFF == ord('q'):
-            break
-    cv2.destroyAllWindows()
 
-
-
-if __name__ == "__main__":
-    main()
+    if __name__ == "__main__":
+        stop_timer = th.Timer(RUNTIME, clean_world, args=[actors_list])
+        stop_timer.start()
+        main()
+        cv2.destroyAllWindows()
+        # clean_world(actors_list)
+       
