@@ -1,0 +1,6 @@
+.env
+venv/
+data/
+img_lbl.json
+.vscode
+*/settings.json

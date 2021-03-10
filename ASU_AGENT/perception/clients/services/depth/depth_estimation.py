@@ -31,7 +31,6 @@ class DepthEstimator:
 
     def __call__(self, left, right):
         disparity_map = self.comp_disparity(left, right)
-        disparity_map[disparity_map == 0] = 0.01
-        disparity_map[disparity_map ==-1] = 0.01
+        disparity_map[disparity_map <= 0] = 0.1     # prevent zero division
         depthmap = self.__f * self.__b / disparity_map
         return depthmap

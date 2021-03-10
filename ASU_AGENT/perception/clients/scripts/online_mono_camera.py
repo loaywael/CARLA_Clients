@@ -6,15 +6,26 @@ import glob
 import numpy as np
 import threading as th
 from utils import clean_world
-from utils import FrameHandler
+from dotenv import load_dotenv
+import utils
 
-# CARLA_LIB_PATH = "../../../../carla/dist/"
-CARLA_LIB_PATH = "/home/loaywael/Development/ROS/carla/CARLA_0-2.9.10/PythonAPI/carla/dist/"
+load_dotenv(verbose=True)
+load_dotenv(dotenv_path="../../")
+PROJECT_DIR = os.getenv("PROJECT_DIR")
+SIMULATOR_DIR = os.getenv("SIMULATOR_DIR")
+CARLA_LIB_PATH = SIMULATOR_DIR+"/PythonAPI/carla/dist/"
 IMG_WIDTH = 800
 IMG_HEIGHT = 600    
 CAM_FOV = 90            # camera field of view
 RUNTIME = 15            # seconds
 TIMEOUT = 10
+
+try:    # reqiored py3.7 
+    sys.path.append(glob.glob(CARLA_LIB_PATH + "carla-*%d.%d-%s.egg"%(
+        sys.version_info.major,
+        sys.version_info.minor,
+        "win-amd64" if os.name == "nt" else "linux-x86_64"
+    ))[0])
 
 try:    # reqiored py3.7 
     sys.path.append(glob.glob(CARLA_LIB_PATH + "carla-*%d.%d-%s.egg"%(
@@ -69,16 +80,19 @@ finally:
         actors_list.append(rgb_camera)
         # -------------- operate actors --------------
         car.set_autopilot(True)
-        frame_handler = FrameHandler()
+        frame_handler = utils.FrameHandler()
         rgb_camera.listen(frame_handler.preprocess)
-        while rgb_camera.is_alive:
-            if (frame_handler.img) is not None:
-                cv2.imshow("src", frame_handler.img)
-                key = cv2.waitKey(10)
-                if key & 0xFF == ord('q'):
-                    break
-        print(f"avg-fps: {frame_handler.avgfps}")
-
+        try:
+            while rgb_camera.is_listening:
+                if (frame_handler.img) is not None:
+                    cv2.imshow("src", frame_handler.img)
+                    key = cv2.waitKey(10)
+                    if key & 0xFF == ord('q'):
+                        break
+            print(f"avg-fps: {frame_handler.avgfps}")
+        except Exception as e:
+            print(">>>[ERROR]---> ", e)
+            utils.clean_world(actors_list)
 
     if __name__ == "__main__":
         stop_timer = th.Timer(RUNTIME, clean_world, args=[actors_list])
