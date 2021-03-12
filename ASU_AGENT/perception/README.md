@@ -93,15 +93,6 @@
     ```
 <br>
 
-3. ### Depth Estimation [in-progress]
-    follow the guide in the repo below and clone it in the detectors folder <br> ```clients/services/depth/depth_estimation.py```
-
-    ```bash
-    $ cd ASU_AGENT/perception/detectors/ObjectDetection/
-    $ git clone https://github.com/theAIGuysCode/Object-Detection-API
-    ```
-<br>
-
 1. ### RGB mono-camera Data Collection
     - offline video stream
         ```bash
