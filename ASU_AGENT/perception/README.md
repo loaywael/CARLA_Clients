@@ -1,25 +1,26 @@
 
 # Directory Tree:
 ```bash
-./perception
+.
 ├── assets
-├── clients
-│   ├── data
-│   │   └── mono_camera
-│   │       ├── rgb_frames
-│   │       └── rgb_video
-│   ├── detections
-│   │   └── mono_camera
-│   │       └── object_detection
-│   └── __pycache__
-└── detectors
-    └── ObjectDetection
-        └── yolov3
-            ├── data
-            ├── detections
-            ├── venv
-            ├── weights
-            └── yolov3_tf2
+└── clients
+    ├── data
+    │   ├── mono_camera
+    │   │   ├── rgb_frames
+    │   │   └── rgb_video
+    │   ├── stereo_camera
+    │   │   ├── left
+    │   │   └── right
+    │   └── tmp
+    ├── output
+    │   └── mono_camera
+    │       └── object_detection
+    ├── scripts
+    │   └── __pycache__
+    └── services
+        ├── depth
+        ├── detection
+        └── odometry
 ```
 <br><br><br>
 
@@ -34,7 +35,40 @@
         <td><img src="./assets/det2.png"></td>
     </tr>
 </table>
+<br><br>
+
+
+<h1 align="center">Depth Estimation [in-progress]</h1>
+
+<p align="center">
+    <img src="./assets/disparity.png">
+</p>
+<table>
+    <tr>
+        <td><img width="100%" src="./assets/depthmap.png"></td>
+        <td><img  width="75%" src="./assets/detection_with_depth.png"></td>
+    </tr>
+</table>
+<br><br>
+
+<h1 align="center">Visual Odometry [in-progress]</h1>
+
+<p align="center">
+    <img src="./assets/trajectory.png">
+</p>
+
+<img src="./assets/sift_flann_matcher.png">
+<img src="./assets/frame_shift.png">
+<br><br>
+
+<h1 align="center">Lane Tracking [in-progress]</h1>
+
+<p align="center">
+    <img src="./assets/lane_tracking.png">
+</p>
+
 <br><br><br>
+
 
 ## Usages
 --------
@@ -59,7 +93,16 @@
     ```
 <br>
 
-3. ### RGB mono-camera Data Collection
+3. ### Depth Estimation [in-progress]
+    follow the guide in the repo below and clone it in the detectors folder <br> ```clients/services/depth/depth_estimation.py```
+
+    ```bash
+    $ cd ASU_AGENT/perception/detectors/ObjectDetection/
+    $ git clone https://github.com/theAIGuysCode/Object-Detection-API
+    ```
+<br>
+
+1. ### RGB mono-camera Data Collection
     - offline video stream
         ```bash
         cd ASU_AGENT/perception/clients
