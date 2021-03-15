@@ -6,6 +6,10 @@ import numpy as np
 import threading as th
 from dotenv import load_dotenv
 import matplotlib.pyplot as plt
+from matplotlib import gridspec
+from matplotlib import animation
+from mpl_toolkits import mplot3d
+
 
 load_dotenv(verbose=True)
 load_dotenv(dotenv_path="../../")
@@ -27,11 +31,11 @@ import carla
 
 class FrameHandler(object):
     def __init__(self, save2disk=False, frame_name="", save_path=None):
+        self.frame = None
         self.__id = 0
         self.__fps = 0
         self.__counter = 0
         self.__avg_fps = []
-        self.frame = None
         self.__fname = frame_name
         self.__save2disk = save2disk
         self.__after_sec = th.Timer(1, self.__calc_fps)
@@ -46,7 +50,7 @@ class FrameHandler(object):
         self.__avg_fps.append(self.__fps)
         self.__counter = 0
         print("\rframe-id: %i\t shape: %s\tfps: %i"%
-        (self.__id, str(self.frame.shape), self.__fps), end=''
+            (self.__id, str(self.frame.shape), self.__fps), end=''
         )
     
     @property
@@ -74,16 +78,142 @@ class FrameHandler(object):
             plt.imwrite
             print("\rsaved frame: %s_%06d.png"%(self.__fname, self.__id))
 
+
 class PlotTrajectory:
-    def __init__(self, trajectory=None):
-        self.__trajectory = trajectory
-        self.x
+    def __init__(self, trajectory=None, coordinates_type='camera'):
+        self.__min_plot_dim = 1
+        self.__coord_type = coordinates_type
+        if isinstance(trajectory, (np.ndarray,)):
+            if self.__coord_type == 'camera':
+                self.__X = trajectory[2, :]
+                self.__Y = trajectory[0, :]
+                self.__Z = trajectory[1, :]    
+        else:
+            self.__X, self.__Y, self.__Z = [], [], []
+        self.__xyz_plot, self.__xy_plot, self.__z_plot = self.__init_plot()
+        
+    @property
+    def trajectory(self):
+        return np.array(list(zip(self.__X, self.__Y, self.__Z)))
+
+    def __init_plot(self):
+        plt.style.use('ggplot')
+        self.__fig = plt.figure(num=1, figsize=(15, 15), dpi=100)
+        align_opt = dict(top=0.5, wspace=0.3, bottom=0.01)
+        plots = gridspec.GridSpec(1, 2, figure=self.__fig, **align_opt)
+        xy_z_plane = gridspec.GridSpecFromSubplotSpec(3, 2, subplot_spec=plots[0, 1])
+        self.__xyz_plot = plt.subplot(plots[0, 0], projection='3d')
+        self.__xy_plot = plt.subplot(xy_z_plane[:2, :])
+        self.__z_plot = plt.subplot(xy_z_plane[2, :])
+        self.__scale_axis()
+        self.__init_labels()
+        return self.__xyz_plot, self.__xy_plot, self.__z_plot
+        
+    def __init_labels(self):
+        # ------- plot <xyz> plane -------
+        self.__xyz_plot.set_xlabel('x-axis (forward/backward)')
+        self.__xyz_plot.set_ylabel('y-axis (right/left)')
+        self.__xyz_plot.set_zlabel('z-axis (up/down)')
+        self.__xyz_plot.grid(True, alpha=0.3)
+        # ------- plot <xy> plane -------
+        self.__xy_plot.hlines(
+            0, 
+            -self.__min_plot_dim, 
+            self.__min_plot_dim, 
+            colors='gray', 
+            linewidth=1, 
+            alpha=0.5
+        )
+        self.__xy_plot.vlines(
+            0, 
+            -self.__min_plot_dim, 
+            self.__min_plot_dim, 
+            colors='gray',
+            linewidth=1, 
+            alpha=0.5
+        )
+        self.__xy_plot.set_xlabel('y-direction')
+        self.__xy_plot.set_ylabel('x-direction')
+        self.__xy_plot.grid(True, alpha=0.3)
+        # ------- plot <z> plane -------
+        self.__z_plot.hlines(
+            0, 0, 
+            self.__min_plot_dim, 
+            colors='gray',
+            linewidth=1,
+            alpha=0.5
+        )
+        self.__z_plot.set_ylabel('z-direction')
+        self.__z_plot.grid(True, alpha=0.3)
+
+    def __clean_plot(self):
+        self.__xyz_plot.clear()
+        self.__xy_plot.clear()
+        self.__z_plot.clear()
+        
+    def __scale_axis(self):
+        if (len(self.__X) + len(self.__Y) + len(self.__Z)) > 0:
+            max_dim = round(max(max(self.__X), max(self.__Y), max(self.__Z))) + len(self.__X)
+#             if max_dim > self.__min_plot_dim:
+            self.__clean_plot()
+            self.__min_plot_dim = max_dim - (max_dim % 10) + 10
+            self.__xyz_plot.set_xlim([-self.__min_plot_dim, self.__min_plot_dim])
+            self.__xyz_plot.set_ylim([-self.__min_plot_dim, self.__min_plot_dim])
+            self.__xyz_plot.set_zlim([0, self.__min_plot_dim])
+            self.__xy_plot.set_xlim([-self.__min_plot_dim, self.__min_plot_dim])
+            self.__xy_plot.set_ylim([-self.__min_plot_dim, self.__min_plot_dim])
+            self.__z_plot.set_xlim([0, self.__min_plot_dim])
+            self.__z_plot.set_ylim([-self.__min_plot_dim, self.__min_plot_dim])
+        
+    def plot(self):
+        start_config = dict(c='g', s=75, marker='x', label='start point')
+        stop_config = dict(c='b', s=75, marker='x', label='end point')
+        line_config = dict(c='g', linestyle='--', linewidth=2, label='trajectory')
+        # ---------- plot xyz view ----------
+        self.__xyz_plot.scatter(self.__Y[0], self.__X[0], self.__Z[0], **start_config)
+        self.__xyz_plot.plot(self.__Y, self.__X, self.__Z, **line_config)
+        self.__xyz_plot.scatter(self.__Y[-1], self.__X[-1], self.__Z[-1], **stop_config)
+        self.__xyz_plot.legend(facecolor='k')
+        # ---------- plot xy plane ----------
+        self.__xy_plot.scatter(self.__Y[0], self.__X[0], **start_config)
+        self.__xy_plot.plot(self.__Y, self.__X, **line_config)
+        self.__xy_plot.scatter(self.__Y[-1], self.__X[-1], **stop_config)
+        self.__xy_plot.legend(facecolor='k')
+        # ---------- plot z axis ----------
+        self.__z_plot.plot(self.__Z, **line_config)
+        self.__z_plot.legend(facecolor='k')
+        plt.show()
+
+    def plot_live(self, xyz_point):
+        self.__X.append(xyz_point[2])
+        self.__Y.append(xyz_point[0])
+        self.__Z.append(xyz_point[1])
+        self.__scale_axis()
+        self.__init_labels()
+        start_config = dict(c='g', s=75, marker='x', label='start point')
+        stop_config = dict(c='b', s=75, marker='x', label='end point')
+        line_config = dict(c='g', linestyle='--', linewidth=2, label='trajectory')
+        # ---------- plot xyz view ----------
+        self.__xyz_plot.scatter(self.__Y[0], self.__X[0] , self.__Z[0], **start_config)
+        self.__xyz_plot.plot(self.__Y, self.__X, self.__Z, **line_config)
+        self.__xyz_plot.scatter(self.__Y[-1], self.__X[-1], self.__Z[-1], **stop_config)
+        self.__xyz_plot.legend(facecolor='k')
+        # ---------- plot xy plane ----------
+        self.__xy_plot.scatter(self.__Y[0], self.__X[0], **start_config)
+        self.__xy_plot.plot(self.__Y, self.__X, **line_config)
+        self.__xy_plot.scatter(self.__Y[-1], self.__X[-1], **stop_config)
+        self.__xy_plot.legend(facecolor='k')
+        # ---------- plot z axis ----------
+        self.__z_plot.plot(self.__Z, **line_config)
+        self.__z_plot.legend(facecolor='k')
     
-    def plot_xy_plane(self):
-        pass
-    
-    def plot_xyz_plane(self):
-        pass
+    def __call__(self, xyz_point):
+        if len(xyz_point) == 3:
+            self.__current_point = xyz_point
+#             animation.FuncAnimation(self.__fig, self.___plot_live)
+        else:
+            print("[ERROR]------> enter a valid 3d-vector point [x, y, z]")
+
 
 def view_stereo(left_path, right_path):
     left_frames = sorted(glob.glob(left_path+"/*"))

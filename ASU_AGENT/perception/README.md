@@ -41,12 +41,12 @@
 <h1 align="center">Depth Estimation [in-progress]</h1>
 
 <p align="center">
-    <img src="./assets/disparity.png">
+    <img src="./assets/detection_with_depth.png">
 </p>
 <table>
     <tr>
         <td><img width="100%" src="./assets/depthmap.png"></td>
-        <td><img  width="75%" src="./assets/detection_with_depth.png"></td>
+        <td><img  width="100%" src="./assets/disparity.png"></td>
     </tr>
 </table>
 <br><br>

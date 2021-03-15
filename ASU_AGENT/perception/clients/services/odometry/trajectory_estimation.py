@@ -75,9 +75,9 @@ class TrajectoryEstimator:
                 matched_pts, *self.__kpts_buffer, self.__K
             )
             trajectory_point = self._estimate_trajectory(R, t, img1_pts, img2_pts)
-            self.__pair_buffer = []
-            self.__kpts_buffer = []
-            self.__des_buffer = []
+            self.__pair_buffer.pop(0)
+            self.__kpts_buffer.pop(0)
+            self.__des_buffer.pop(0)
             return trajectory_point
 
 
